@@ -29,9 +29,9 @@ export default function Login() {
     setError('');
     setSubmitting(true);
     try {
-      await login(email, password);
+      const loggedInUser = await login(email, password);
       toast.success('Signed in successfully.');
-      navigate('/dashboard');
+      navigate(loggedInUser.role === 'TEACHER' ? '/teacher/dashboard' : '/student/dashboard', { replace: true });
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       const msg = axiosErr?.response?.data?.message || 'Unable to sign in. Please verify your credentials.';

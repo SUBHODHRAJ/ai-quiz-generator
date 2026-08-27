@@ -40,9 +40,9 @@ export default function Register() {
     setError('');
     setSubmitting(true);
     try {
-      await register({ name, email, password, role });
+      const newUser = await register({ name, email, password, role });
       toast.success('Account created successfully.');
-      navigate('/dashboard');
+      navigate(newUser.role === 'TEACHER' ? '/teacher/dashboard' : '/student/dashboard', { replace: true });
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       const msg = axiosErr?.response?.data?.message || 'Unable to create account. Please try again.';
