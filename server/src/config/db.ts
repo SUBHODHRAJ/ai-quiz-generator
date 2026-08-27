@@ -1,18 +1,29 @@
-﻿import mongoose from "mongoose";
+import mongoose from "mongoose";
 
 export const connectDatabase = async (): Promise<void> => {
   try {
-    const mongoUri = process.env.MONGO_URI;
+    const rawUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+    const mongoUri = rawUri?.trim();
 
     if (!mongoUri) {
-      throw new Error("MONGO_URI is not defined in environment variables.");
+      throw new Error("MONGO_URI is missing from environment variables.");
     }
 
-    await mongoose.connect(mongoUri);
+    if (!mongoUri.startsWith("mongodb://") && !mongoUri.startsWith("mongodb+srv://")) {
+      throw new Error(
+        "Invalid MONGO_URI scheme: expected connection string to start with 'mongodb://' or 'mongodb+srv://'."
+      );
+    }
+
+    console.log("Connecting to MongoDB Atlas...");
+
+    await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 10000,
+    });
 
     console.log("MongoDB connected successfully.");
-  } catch (error) {
-    console.error("MongoDB connection failed:", error);
-    process.exit(1);
+  } catch (error: any) {
+    console.error("MongoDB connection failed:", error.message || error);
+    throw error;
   }
 };
