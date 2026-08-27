@@ -43,9 +43,22 @@ export default function Register() {
       const newUser = await register({ name, email, password, role });
       toast.success('Account created successfully.');
       navigate(newUser.role === 'TEACHER' ? '/teacher/dashboard' : '/student/dashboard', { replace: true });
-    } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } } };
-      const msg = axiosErr?.response?.data?.message || 'Unable to create account. Please try again.';
+    } catch (err: any) {
+      console.error('[Registration Failure Details]:', err);
+      let msg = 'Unable to create account. Please try again.';
+
+      if (err?.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err?.response?.data?.error) {
+        msg = err.response.data.error;
+      } else if (typeof err?.response?.data === 'string' && err.response.data.length < 200) {
+        msg = err.response.data;
+      } else if (err?.message === 'Network Error' || !err?.response) {
+        msg = `Network Error: Cannot reach API server. Please check your backend connection and Railway environment variables.`;
+      } else if (err?.message) {
+        msg = err.message;
+      }
+
       setError(msg);
       toast.error(msg);
     } finally {
