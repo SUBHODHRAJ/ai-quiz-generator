@@ -666,8 +666,17 @@ export async function updateQuiz(
       return;
     }
 
-    const { id } = req.params;
-    const { title, description, topic, questions, status } = req.body;
+    const id = req.params.id as string;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid quiz ID format."
+      });
+      return;
+    }
+
+    const body = req.body || {};
+    const { title, description, topic, questions, status } = body;
 
     const quiz = await Quiz.findOne({
       _id: id,
@@ -725,7 +734,7 @@ export async function updateQuiz(
     console.error("Update quiz error:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to update quiz."
+      message: error?.message || "Failed to update quiz."
     });
   }
 }
@@ -743,10 +752,19 @@ export async function updateQuizStatus(
       return;
     }
 
-    const { id } = req.params;
-    const { status } = req.body;
+    const id = req.params.id as string;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid quiz ID format."
+      });
+      return;
+    }
 
-    if (!["draft", "verified", "published"].includes(status)) {
+    const body = req.body || {};
+    const status = body.status;
+
+    if (!status || !["draft", "verified", "published"].includes(status)) {
       res.status(400).json({
         success: false,
         message: "Invalid status. Must be draft, verified, or published."
@@ -780,7 +798,7 @@ export async function updateQuizStatus(
     console.error("Update quiz status error:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to update quiz status."
+      message: error?.message || "Failed to update quiz status."
     });
   }
 }
@@ -789,16 +807,106 @@ export async function publishQuiz(
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> {
-  req.body.status = "published";
-  return updateQuizStatus(req, res);
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: "Authentication required."
+      });
+      return;
+    }
+
+    const id = req.params.id as string;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid quiz ID format."
+      });
+      return;
+    }
+
+    const quiz = await Quiz.findOneAndUpdate(
+      {
+        _id: id,
+        createdBy: req.user.userId
+      },
+      { status: "published" },
+      { new: true }
+    );
+
+    if (!quiz) {
+      res.status(404).json({
+        success: false,
+        message: "Quiz not found or you do not have permission to publish it."
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Quiz published successfully.",
+      data: quiz
+    });
+  } catch (error: any) {
+    console.error("Publish quiz error:", error);
+    res.status(500).json({
+      success: false,
+      message: error?.message || "Failed to publish quiz."
+    });
+  }
 }
 
 export async function unpublishQuiz(
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> {
-  req.body.status = "draft";
-  return updateQuizStatus(req, res);
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: "Authentication required."
+      });
+      return;
+    }
+
+    const id = req.params.id as string;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid quiz ID format."
+      });
+      return;
+    }
+
+    const quiz = await Quiz.findOneAndUpdate(
+      {
+        _id: id,
+        createdBy: req.user.userId
+      },
+      { status: "draft" },
+      { new: true }
+    );
+
+    if (!quiz) {
+      res.status(404).json({
+        success: false,
+        message: "Quiz not found or you do not have permission to unpublish it."
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Quiz unpublished successfully.",
+      data: quiz
+    });
+  } catch (error: any) {
+    console.error("Unpublish quiz error:", error);
+    res.status(500).json({
+      success: false,
+      message: error?.message || "Failed to unpublish quiz."
+    });
+  }
 }
 
 export async function deleteQuiz(
@@ -814,8 +922,17 @@ export async function deleteQuiz(
       return;
     }
 
+    const id = req.params.id as string;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid quiz ID format."
+      });
+      return;
+    }
+
     const quiz = await Quiz.findOneAndDelete({
-      _id: req.params.id,
+      _id: id,
       createdBy: req.user.userId
     });
 
@@ -838,7 +955,7 @@ export async function deleteQuiz(
     console.error("Delete quiz error:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to delete quiz."
+      message: error?.message || "Failed to delete quiz."
     });
   }
 }

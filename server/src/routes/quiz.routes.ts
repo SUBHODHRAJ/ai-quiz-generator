@@ -167,6 +167,11 @@ router.patch(
   authenticate,
   updateQuizStatus
 );
+router.post(
+  "/:id/status",
+  authenticate,
+  updateQuizStatus
+);
 
 /*
  * Publish quiz
@@ -176,11 +181,21 @@ router.patch(
   authenticate,
   publishQuiz
 );
+router.post(
+  "/:id/publish",
+  authenticate,
+  publishQuiz
+);
 
 /*
  * Unpublish quiz
  */
 router.patch(
+  "/:id/unpublish",
+  authenticate,
+  unpublishQuiz
+);
+router.post(
   "/:id/unpublish",
   authenticate,
   unpublishQuiz
