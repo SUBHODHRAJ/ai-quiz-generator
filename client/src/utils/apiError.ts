@@ -56,10 +56,7 @@ export function extractApiErrorMessage(err: unknown, defaultFallback = "An unexp
     if (axiosError.code === "ECONNABORTED" || axiosError.message?.includes("timeout")) {
       return "Request timed out while waiting for server response. Please try again.";
     }
-    if (window.location.protocol === "https:" && import.meta.env.VITE_API_URL?.startsWith("http://")) {
-      return "Mixed Content Block: Cannot connect to an insecure (HTTP) API from a secure (HTTPS) frontend.";
-    }
-    return "Network Error: Cannot reach API server. Please check your backend connection and Railway environment variables.";
+    return "Network Error: Cannot reach API server. Please check your backend connection.";
   }
 
   if (axiosError.message && typeof axiosError.message === "string") {
