@@ -2,7 +2,8 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = (process.env.API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
+const BASE_HOST = API_URL.replace(/\/api$/, "");
 
 const randomId = Date.now();
 const teacherEmail = `teacher_${randomId}@quizmind.test`;
@@ -13,6 +14,7 @@ const password = "Password123!";
 async function runTests() {
   console.log("==========================================");
   console.log(" Starting QuizMind Full-Stack E2E API Test ");
+  console.log(" Target API URL: " + API_URL);
   console.log("==========================================");
 
   let teacherToken = "";
@@ -26,7 +28,7 @@ async function runTests() {
 
   // 1. Health Checks
   console.log("\n[TEST 1] Testing Health Endpoints...");
-  const healthRes = await axios.get("http://localhost:5000/health");
+  const healthRes = await axios.get(`${BASE_HOST}/health`);
   console.log("  GET /health:", healthRes.data.success ? "PASS" : "FAIL");
   const apiHealthRes = await axios.get(`${API_URL}/health`);
   console.log("  GET /api/health:", apiHealthRes.data.success ? "PASS" : "FAIL");

@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { AlertBox } from '../components/ui/ConfirmDialog';
+import { extractApiErrorMessage } from '../utils/apiError';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -32,22 +33,9 @@ export default function Login() {
       const loggedInUser = await login(email, password);
       toast.success('Signed in successfully.');
       navigate(loggedInUser.role === 'TEACHER' ? '/teacher/dashboard' : '/student/dashboard', { replace: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Login Failure Details]:', err);
-      let msg = 'Unable to sign in. Please verify your credentials.';
-
-      if (err?.response?.data?.message) {
-        msg = err.response.data.message;
-      } else if (err?.response?.data?.error) {
-        msg = err.response.data.error;
-      } else if (typeof err?.response?.data === 'string' && err.response.data.length < 200) {
-        msg = err.response.data;
-      } else if (err?.message === 'Network Error' || !err?.response) {
-        msg = `Network Error: Cannot reach API server. Please check your backend connection and Railway environment variables.`;
-      } else if (err?.message) {
-        msg = err.message;
-      }
-
+      const msg = extractApiErrorMessage(err, 'Unable to sign in. Please verify your credentials.');
       setError(msg);
       toast.error(msg);
     } finally {
