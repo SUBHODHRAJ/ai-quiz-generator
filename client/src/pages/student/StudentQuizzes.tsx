@@ -96,7 +96,7 @@ export default function StudentQuizzes() {
             width: 36,
             height: 36,
             borderRadius: 'var(--radius-md)',
-            background: 'rgba(99, 102, 241, 0.15)',
+            background: 'var(--color-primary-subtle)',
             color: 'var(--color-primary)',
             display: 'flex',
             alignItems: 'center',

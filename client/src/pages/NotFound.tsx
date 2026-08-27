@@ -22,7 +22,7 @@ export default function NotFound() {
           width: 60,
           height: 60,
           borderRadius: '50%',
-          background: 'rgba(99, 102, 241, 0.15)',
+          background: 'var(--color-primary-subtle)',
           color: 'var(--color-primary)',
           display: 'flex',
           alignItems: 'center',

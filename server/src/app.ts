@@ -51,12 +51,24 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "5mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Production-safe request logger
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (req.path !== "/health" && req.path !== "/api/health") {
+      console.log(`[HTTP] ${req.method} ${req.originalUrl} ${res.statusCode} (${duration}ms)`);
+    }
+  });
+  next();
+});
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 600,
+  limit: 1000,
   standardHeaders: true,
   legacyHeaders: false
 });

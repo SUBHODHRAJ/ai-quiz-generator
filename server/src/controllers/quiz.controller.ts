@@ -661,7 +661,8 @@ export async function updateQuiz(
     if (!req.user) {
       res.status(401).json({
         success: false,
-        message: "Authentication required."
+        message: "Authentication required.",
+        errorCode: "AUTH_REQUIRED"
       });
       return;
     }
@@ -670,7 +671,8 @@ export async function updateQuiz(
     if (!mongoose.Types.ObjectId.isValid(id)) {
       res.status(400).json({
         success: false,
-        message: "Invalid quiz ID format."
+        message: "Invalid quiz ID format.",
+        errorCode: "INVALID_ID"
       });
       return;
     }
@@ -686,39 +688,45 @@ export async function updateQuiz(
     if (!quiz) {
       res.status(404).json({
         success: false,
-        message: "Quiz not found or you do not have permission to update it."
+        message: "Quiz not found or you do not have permission to update it.",
+        errorCode: "QUIZ_NOT_FOUND"
       });
       return;
     }
 
-    if (title !== undefined) quiz.title = title;
-    if (description !== undefined) quiz.description = description;
-    if (topic !== undefined) quiz.topic = topic;
+    if (title !== undefined && title.trim()) quiz.title = title.trim();
+    if (description !== undefined) quiz.description = description.trim();
+    if (topic !== undefined) quiz.topic = topic.trim();
     if (status !== undefined && ["draft", "verified", "published"].includes(status)) {
       quiz.status = status;
     }
 
     if (questions && Array.isArray(questions)) {
-      quiz.questions = questions.map((q) => {
+      quiz.questions = questions.map((q: any, idx: number) => {
         const type = ["mcq", "true_false", "short_answer"].includes(q.type) ? q.type : "mcq";
         let options = q.options;
 
         if (type === "true_false") {
           options = ["True", "False"];
-        } else if (type === "mcq" && (!options || options.length < 2)) {
-          options = ["Option A", "Option B", "Option C", "Option D"];
+        } else if (type === "mcq") {
+          options = Array.isArray(options) && options.length >= 2
+            ? options.map((opt: any) => String(opt || "").trim()).filter(Boolean)
+            : ["Option A", "Option B", "Option C", "Option D"];
+          if (options.length < 2) {
+            options = ["Option A", "Option B", "Option C", "Option D"];
+          }
         } else if (type === "short_answer") {
           options = undefined;
         }
 
         return {
-          question: q.question,
+          question: String(q.question || `Question ${idx + 1}`).trim(),
           type,
           options,
-          answer: q.answer,
-          explanation: q.explanation || "",
+          answer: String(q.answer || (type === "true_false" ? "True" : "Answer")).trim(),
+          explanation: String(q.explanation || "Derived from source training documentation.").trim(),
           difficulty: ["easy", "medium", "hard"].includes(q.difficulty) ? q.difficulty : "medium",
-          source: q.source || "Source: Uploaded training material"
+          source: String(q.source || "Source: Uploaded training material").trim()
         };
       });
     }
@@ -732,9 +740,10 @@ export async function updateQuiz(
     });
   } catch (error: any) {
     console.error("Update quiz error:", error);
-    res.status(500).json({
+    res.status(400).json({
       success: false,
-      message: error?.message || "Failed to update quiz."
+      message: error?.message || "Failed to update quiz.",
+      errorCode: "QUIZ_UPDATE_FAILED"
     });
   }
 }
@@ -747,7 +756,8 @@ export async function updateQuizStatus(
     if (!req.user) {
       res.status(401).json({
         success: false,
-        message: "Authentication required."
+        message: "Authentication required.",
+        errorCode: "AUTH_REQUIRED"
       });
       return;
     }
@@ -756,7 +766,8 @@ export async function updateQuizStatus(
     if (!mongoose.Types.ObjectId.isValid(id)) {
       res.status(400).json({
         success: false,
-        message: "Invalid quiz ID format."
+        message: "Invalid quiz ID format.",
+        errorCode: "INVALID_ID"
       });
       return;
     }
@@ -767,7 +778,8 @@ export async function updateQuizStatus(
     if (!status || !["draft", "verified", "published"].includes(status)) {
       res.status(400).json({
         success: false,
-        message: "Invalid status. Must be draft, verified, or published."
+        message: "Invalid status. Must be draft, verified, or published.",
+        errorCode: "INVALID_STATUS"
       });
       return;
     }
@@ -784,7 +796,8 @@ export async function updateQuizStatus(
     if (!quiz) {
       res.status(404).json({
         success: false,
-        message: "Quiz not found or you do not have permission to modify it."
+        message: "Quiz not found or you do not have permission to modify it.",
+        errorCode: "QUIZ_NOT_FOUND"
       });
       return;
     }
@@ -796,9 +809,10 @@ export async function updateQuizStatus(
     });
   } catch (error: any) {
     console.error("Update quiz status error:", error);
-    res.status(500).json({
+    res.status(400).json({
       success: false,
-      message: error?.message || "Failed to update quiz status."
+      message: error?.message || "Failed to update quiz status.",
+      errorCode: "QUIZ_STATUS_FAILED"
     });
   }
 }
@@ -811,7 +825,8 @@ export async function publishQuiz(
     if (!req.user) {
       res.status(401).json({
         success: false,
-        message: "Authentication required."
+        message: "Authentication required.",
+        errorCode: "AUTH_REQUIRED"
       });
       return;
     }
@@ -820,7 +835,8 @@ export async function publishQuiz(
     if (!mongoose.Types.ObjectId.isValid(id)) {
       res.status(400).json({
         success: false,
-        message: "Invalid quiz ID format."
+        message: "Invalid quiz ID format.",
+        errorCode: "INVALID_ID"
       });
       return;
     }
@@ -828,19 +844,38 @@ export async function publishQuiz(
     const body = req.body || {};
     const updateData: any = { status: "published" };
 
-    if (body.title !== undefined) updateData.title = body.title;
-    if (body.description !== undefined) updateData.description = body.description;
-    if (body.topic !== undefined) updateData.topic = body.topic;
-    if (body.questions && Array.isArray(body.questions)) {
-      updateData.questions = body.questions.map((q: any) => ({
-        question: q.question,
-        type: ["mcq", "true_false", "short_answer"].includes(q.type) ? q.type : "mcq",
-        options: q.type === "true_false" ? ["True", "False"] : q.type === "short_answer" ? undefined : q.options,
-        answer: q.answer,
-        explanation: q.explanation || "",
-        difficulty: ["easy", "medium", "hard"].includes(q.difficulty) ? q.difficulty : "medium",
-        source: q.source || "Source: Uploaded training material"
-      }));
+    if (body.title !== undefined && body.title.trim()) updateData.title = body.title.trim();
+    if (body.description !== undefined) updateData.description = body.description.trim();
+    if (body.topic !== undefined) updateData.topic = body.topic.trim();
+
+    if (body.questions && Array.isArray(body.questions) && body.questions.length > 0) {
+      updateData.questions = body.questions.map((q: any, idx: number) => {
+        const type = ["mcq", "true_false", "short_answer"].includes(q.type) ? q.type : "mcq";
+        let options = q.options;
+
+        if (type === "true_false") {
+          options = ["True", "False"];
+        } else if (type === "mcq") {
+          options = Array.isArray(options) && options.length >= 2
+            ? options.map((opt: any) => String(opt || "").trim()).filter(Boolean)
+            : ["Option A", "Option B", "Option C", "Option D"];
+          if (options.length < 2) {
+            options = ["Option A", "Option B", "Option C", "Option D"];
+          }
+        } else if (type === "short_answer") {
+          options = undefined;
+        }
+
+        return {
+          question: String(q.question || `Question ${idx + 1}`).trim(),
+          type,
+          options,
+          answer: String(q.answer || (type === "true_false" ? "True" : "Answer")).trim(),
+          explanation: String(q.explanation || "Derived from source training documentation.").trim(),
+          difficulty: ["easy", "medium", "hard"].includes(q.difficulty) ? q.difficulty : "medium",
+          source: String(q.source || "Source: Uploaded training material").trim()
+        };
+      });
     }
 
     const quiz = await Quiz.findOneAndUpdate(
@@ -849,13 +884,14 @@ export async function publishQuiz(
         createdBy: req.user.userId
       },
       { $set: updateData },
-      { new: true }
+      { new: true, runValidators: true }
     );
 
     if (!quiz) {
       res.status(404).json({
         success: false,
-        message: "Quiz not found or you do not have permission to publish it."
+        message: "Quiz not found or you do not have permission to publish it.",
+        errorCode: "QUIZ_NOT_FOUND"
       });
       return;
     }
@@ -867,9 +903,10 @@ export async function publishQuiz(
     });
   } catch (error: any) {
     console.error("Publish quiz error:", error);
-    res.status(500).json({
+    res.status(400).json({
       success: false,
-      message: error?.message || "Failed to publish quiz."
+      message: error?.message || "Failed to publish quiz.",
+      errorCode: "QUIZ_PUBLISH_FAILED"
     });
   }
 }

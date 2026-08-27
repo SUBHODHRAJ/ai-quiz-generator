@@ -225,7 +225,7 @@ export default function StudentQuiz() {
                     alignItems: 'center',
                     gap: 'var(--sp-3)',
                     padding: 'var(--sp-3) var(--sp-4)',
-                    background: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'var(--color-surface-mid)',
+                    background: isSelected ? 'var(--color-primary-subtle)' : 'var(--color-surface-mid)',
                     border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
                     borderRadius: 'var(--radius-md)',
                     color: 'var(--color-text)',
@@ -267,7 +267,7 @@ export default function StudentQuiz() {
                   onClick={() => handleSelectOption(opt)}
                   style={{
                     padding: 'var(--sp-4)',
-                    background: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'var(--color-surface-mid)',
+                    background: isSelected ? 'var(--color-primary-subtle)' : 'var(--color-surface-mid)',
                     border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
                     borderRadius: 'var(--radius-md)',
                     color: isSelected ? 'var(--color-primary)' : 'var(--color-text)',

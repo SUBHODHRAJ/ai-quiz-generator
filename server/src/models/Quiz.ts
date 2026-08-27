@@ -1,4 +1,4 @@
-﻿import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IQuestion {
   question: string;
@@ -26,12 +26,14 @@ const questionSchema = new Schema<IQuestion>(
   {
     question: {
       type: String,
-      required: true
+      required: [true, "Question text is required"],
+      trim: true
     },
 
     type: {
       type: String,
       enum: ["mcq", "true_false", "short_answer"],
+      default: "mcq",
       required: true
     },
 
@@ -42,12 +44,15 @@ const questionSchema = new Schema<IQuestion>(
 
     answer: {
       type: String,
-      required: true
+      required: [true, "Answer is required"],
+      trim: true,
+      default: "Answer"
     },
 
     explanation: {
       type: String,
-      required: true
+      default: "Derived from source documentation.",
+      trim: true
     },
 
     difficulty: {
@@ -56,7 +61,10 @@ const questionSchema = new Schema<IQuestion>(
       default: "medium"
     },
 
-    source: String
+    source: {
+      type: String,
+      default: "Source: Uploaded training material"
+    }
   },
   { _id: false }
 );

@@ -61,8 +61,8 @@ export default function Register() {
         color: '#FFF8ED'
       }}>
         <div className="auth-left-bg">
-          <div className="auth-left-glow" style={{ background: 'radial-gradient(circle, rgba(255,181,0,0.15) 0%, transparent 70%)' }} />
-          <div className="auth-left-glow-2" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%)' }} />
+          <div className="auth-left-glow" style={{ background: 'radial-gradient(circle, rgba(255,181,0,0.18) 0%, transparent 70%)' }} />
+          <div className="auth-left-glow-2" style={{ background: 'radial-gradient(circle, rgba(255,181,0,0.08) 0%, transparent 70%)' }} />
         </div>
 
         <div className="auth-brand">
