@@ -322,9 +322,8 @@ export async function getStudentStats(
           const diffDays = Math.round(
             (currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24)
           );
-
           if (diffDays === 1) {
-            streak++;
+            streak += 1;
             currentDate = prevDate;
           } else {
             break;
@@ -333,6 +332,33 @@ export async function getStudentStats(
       }
     }
 
+    // Compute topic breakdown for student
+    const studentTopicMap = new Map<string, { topic: string; totalScore: number; count: number }>();
+    attempts.forEach((att) => {
+      const top = att.quizTopic || "General";
+      const existing = studentTopicMap.get(top) || { topic: top, totalScore: 0, count: 0 };
+      existing.totalScore += att.percentage;
+      existing.count += 1;
+      studentTopicMap.set(top, existing);
+    });
+
+    const topicBreakdown = Array.from(studentTopicMap.values()).map((t) => ({
+      topic: t.topic,
+      attempts: t.count,
+      averageScore: Math.round(t.totalScore / t.count)
+    }));
+
+    // Score history in chronological order for charting
+    const scoreHistory = attempts
+      .slice(0, 10)
+      .reverse()
+      .map((att, idx) => ({
+        attemptNumber: idx + 1,
+        date: new Date(att.submittedAt || att.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+        score: att.percentage,
+        quizTitle: att.quizTitle || "Assessment"
+      }));
+
     res.status(200).json({
       success: true,
       data: {
@@ -340,6 +366,8 @@ export async function getStudentStats(
         quizzesCompleted,
         averageScore,
         learningStreak: streak,
+        scoreHistory,
+        topicBreakdown,
         recentAttempts: attempts.slice(0, 5)
       }
     });
@@ -348,6 +376,144 @@ export async function getStudentStats(
     res.status(500).json({
       success: false,
       message: "Failed to calculate student statistics."
+    });
+  }
+}
+
+/**
+ * Get platform leaderboard
+ * GET /api/attempts/leaderboard
+ */
+export async function getLeaderboard(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const { timeframe = "all", topic, quizId } = req.query;
+
+    const matchQuery: any = {};
+
+    if (quizId && mongoose.Types.ObjectId.isValid(quizId as string)) {
+      matchQuery.quiz = new mongoose.Types.ObjectId(quizId as string);
+    }
+
+    if (topic && typeof topic === "string" && topic !== "all") {
+      matchQuery.quizTopic = topic;
+    }
+
+    const now = new Date();
+    if (timeframe === "week") {
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      matchQuery.createdAt = { $gte: oneWeekAgo };
+    } else if (timeframe === "month") {
+      const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      matchQuery.createdAt = { $gte: oneMonthAgo };
+    }
+
+    const aggregated = await QuizAttempt.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: "$student",
+          totalAttempts: { $sum: 1 },
+          totalPoints: { $sum: "$score" },
+          totalQuestions: { $sum: "$totalQuestions" },
+          avgScore: { $avg: "$percentage" },
+          highestScore: { $max: "$percentage" },
+          perfectScores: {
+            $sum: { $cond: [{ $gte: ["$percentage", 100] }, 1, 0] }
+          },
+          lastAttemptAt: { $max: "$submittedAt" },
+          topics: { $push: "$quizTopic" }
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "studentInfo"
+        }
+      },
+      { $unwind: "$studentInfo" },
+      {
+        $project: {
+          studentId: "$_id",
+          name: "$studentInfo.name",
+          email: "$studentInfo.email",
+          role: "$studentInfo.role",
+          totalAttempts: 1,
+          totalPoints: 1,
+          totalQuestions: 1,
+          avgScore: { $round: ["$avgScore", 1] },
+          highestScore: 1,
+          perfectScores: 1,
+          lastAttemptAt: 1,
+          topics: 1
+        }
+      },
+      { $sort: { avgScore: -1, totalAttempts: -1, totalPoints: -1 } }
+    ]);
+
+    const rankings = aggregated.map((item, idx) => {
+      const topicCounts: Record<string, number> = {};
+      (item.topics || []).forEach((t: string) => {
+        if (t) topicCounts[t] = (topicCounts[t] || 0) + 1;
+      });
+      let topTopic = "General";
+      let maxTopicCount = 0;
+      for (const [t, c] of Object.entries(topicCounts)) {
+        if (c > maxTopicCount) {
+          maxTopicCount = c;
+          topTopic = t;
+        }
+      }
+
+      let tier = "Trainee";
+      if (item.avgScore >= 90 && item.totalAttempts >= 3) tier = "Master Expert";
+      else if (item.avgScore >= 80) tier = "Senior Specialist";
+      else if (item.avgScore >= 70) tier = "Certified Practitioner";
+
+      return {
+        rank: idx + 1,
+        studentId: item.studentId,
+        name: item.name || "Learner",
+        email: item.email,
+        totalAttempts: item.totalAttempts,
+        totalPoints: item.totalPoints,
+        totalQuestions: item.totalQuestions,
+        averageScore: item.avgScore,
+        highestScore: item.highestScore,
+        perfectScores: item.perfectScores,
+        topTopic,
+        tier,
+        lastAttemptAt: item.lastAttemptAt
+      };
+    });
+
+    const currentUserId = req.user?.userId;
+    let currentUserStanding = null;
+    if (currentUserId) {
+      currentUserStanding = rankings.find(r => r.studentId.toString() === currentUserId) || null;
+    }
+
+    const podium = rankings.slice(0, 3);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        timeframe,
+        totalLearners: rankings.length,
+        rankings,
+        podium,
+        currentUserStanding
+      }
+    });
+  } catch (error: any) {
+    console.error("Leaderboard aggregation error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to load leaderboard data."
     });
   }
 }

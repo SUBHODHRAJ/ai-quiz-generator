@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
+    "seed": "node dist/utils/seed.js",
+    "clean:db": "node dist/utils/cleanDb.js",
     "start": "node dist/server.js"
   },
   "dependencies": {

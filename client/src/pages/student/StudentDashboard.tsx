@@ -8,8 +8,20 @@ import {
   ArrowRight,
   Clock,
   Award,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck
 } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar
+} from 'recharts';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import type { Quiz, StudentStats } from '../../types/quiz';
@@ -19,9 +31,9 @@ import EmptyState from '../../components/ui/EmptyState';
 function getGreeting(name: string): string {
   const hour = new Date().getHours();
   const first = name.split(' ')[0];
-  if (hour < 12) return `Good morning, ${first} 👋`;
-  if (hour < 17) return `Good afternoon, ${first} 👋`;
-  return `Good evening, ${first} 👋`;
+  if (hour < 12) return `Good morning, ${first}`;
+  if (hour < 17) return `Good afternoon, ${first}`;
+  return `Good evening, ${first}`;
 }
 
 export default function StudentDashboard() {
@@ -65,46 +77,52 @@ export default function StudentDashboard() {
       value: loading ? '—' : String(stats?.availableQuizzes ?? quizzes.length),
       icon: <BookOpen size={20} />,
       color: 'var(--color-primary)',
-      note: 'Ready to take',
+      note: 'Ready for evaluation',
     },
     {
       label: 'Quizzes Completed',
       value: loading ? '—' : String(stats?.quizzesCompleted ?? 0),
       icon: <CheckCircle2 size={20} />,
       color: 'var(--color-success)',
-      note: 'Assessments finished',
+      note: 'Verified evaluations',
     },
     {
       label: 'Average Score',
       value: loading ? '—' : stats?.averageScore ? `${stats.averageScore}%` : '0%',
       icon: <Target size={20} />,
       color: 'var(--color-warning)',
-      note: 'Overall performance',
+      note: 'Overall comprehension',
     },
     {
       label: 'Learning Streak',
-      value: loading ? '—' : `${stats?.learningStreak ?? 0} days`,
+      value: loading ? '—' : `${stats?.learningStreak ?? 0} day${(stats?.learningStreak ?? 0) === 1 ? '' : 's'}`,
       icon: <TrendingUp size={20} />,
-      color: 'var(--color-ai)',
-      note: 'Consecutive activity',
+      color: 'var(--color-gold)',
+      note: 'Active consistency',
     },
   ];
 
+  const scoreHistory = (stats as any)?.scoreHistory || [];
+  const topicBreakdown = (stats as any)?.topicBreakdown || [];
+
   return (
-    <>
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
       {/* Greeting Banner */}
-      <div className="greeting-banner">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--sp-2)' }}>
+      <div className="page-header" style={{ marginBottom: 'var(--sp-6)' }}>
+        <div className="page-eyebrow">
+          <ShieldCheck size={14} /> Trainee Learning Portal
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--sp-4)' }}>
           <div>
-            <p className="greeting-name">{getGreeting(user?.name || 'Student')}</p>
-            <p className="greeting-subtitle">
+            <h1 className="page-title">{getGreeting(user?.name || 'Learner')} 👋</h1>
+            <p className="page-subtitle">
               Continue your workforce training pathway and achieve assessment mastery.
             </p>
           </div>
           <button
             className="btn btn-primary btn-md"
             onClick={() => navigate('/student/quizzes')}
-            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--color-primary)', color: '#fff' }}
           >
             Explore Catalogue <ArrowRight size={15} />
           </button>
@@ -115,7 +133,7 @@ export default function StudentDashboard() {
       <div className="stat-grid" style={{ marginBottom: 'var(--sp-8)' }}>
         {statItems.map(s => (
           <div className="stat-card" key={s.label}>
-            <div className="stat-card-icon" style={{ background: `${s.color}18`, color: s.color }}>
+            <div className="stat-card-icon" style={{ background: 'var(--color-surface-high)', color: s.color }}>
               {s.icon}
             </div>
             <div className="stat-card-value">{s.value}</div>
@@ -124,6 +142,79 @@ export default function StudentDashboard() {
           </div>
         ))}
       </div>
+
+      {/* Performance Trends Row */}
+      {scoreHistory.length > 1 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 'var(--sp-6)', marginBottom: 'var(--sp-8)' }}>
+          {/* Score Trend LineChart */}
+          <div className="card" style={{ padding: 'var(--sp-6)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-4)' }}>
+              <div>
+                <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, margin: 0 }}>Score Progression</h3>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: '2px 0 0 0' }}>
+                  Recent assessment performance trajectory
+                </p>
+              </div>
+              <TrendingUp size={18} style={{ color: 'var(--color-success)' }} />
+            </div>
+
+            <div style={{ width: '100%', height: 200 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={scoreHistory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                  <XAxis dataKey="date" stroke="var(--color-text-muted)" fontSize={11} tickLine={false} />
+                  <YAxis domain={[0, 100]} stroke="var(--color-text-muted)" fontSize={11} tickFormatter={(v) => `${v}%`} tickLine={false} />
+                  <Tooltip
+                    formatter={(v: any) => [`${v}%`, 'Score']}
+                    contentStyle={{
+                      backgroundColor: 'var(--color-surface)',
+                      borderColor: 'var(--color-border-strong)',
+                      borderRadius: 8,
+                      color: 'var(--color-text)'
+                    }}
+                  />
+                  <Line type="monotone" dataKey="score" stroke="var(--color-primary)" strokeWidth={3} dot={{ fill: 'var(--color-gold)', r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Topic Mastery BarChart */}
+          {topicBreakdown.length > 0 && (
+            <div className="card" style={{ padding: 'var(--sp-6)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-4)' }}>
+                <div>
+                  <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, margin: 0 }}>Topic Comprehension</h3>
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: '2px 0 0 0' }}>
+                    Average score achieved by subject area
+                  </p>
+                </div>
+                <Award size={18} style={{ color: 'var(--color-gold)' }} />
+              </div>
+
+              <div style={{ width: '100%', height: 200 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topicBreakdown} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                    <XAxis dataKey="topic" stroke="var(--color-text-muted)" fontSize={11} tickLine={false} />
+                    <YAxis domain={[0, 100]} stroke="var(--color-text-muted)" fontSize={11} tickFormatter={(v) => `${v}%`} tickLine={false} />
+                    <Tooltip
+                      formatter={(v: any) => [`${v}%`, 'Average']}
+                      contentStyle={{
+                        backgroundColor: 'var(--color-surface)',
+                        borderColor: 'var(--color-border-strong)',
+                        borderRadius: 8,
+                        color: 'var(--color-text)'
+                      }}
+                    />
+                    <Bar dataKey="averageScore" fill="var(--color-gold)" radius={[4, 4, 0, 0]} barSize={32} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Section: Available Quizzes ── */}
       <div className="card" style={{ padding: 0, marginBottom: 'var(--sp-8)' }}>
@@ -139,7 +230,7 @@ export default function StudentDashboard() {
           </div>
           <Link
             to="/student/quizzes"
-            style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}
+            style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}
           >
             View All ({quizzes.length}) <ChevronRight size={14} />
           </Link>
@@ -178,22 +269,22 @@ export default function StudentDashboard() {
                 >
                   <div
                     style={{
-                      width: 40, height: 40, borderRadius: 'var(--radius-md)',
-                      background: 'rgba(99, 102, 241, 0.15)',
+                      width: 42, height: 42, borderRadius: 'var(--radius-md)',
+                      background: 'var(--color-primary-subtle)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       color: 'var(--color-primary)', flexShrink: 0,
                     }}
                   >
-                    <BookOpen size={18} />
+                    <BookOpen size={20} />
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, color: 'var(--color-text)', marginBottom: 2 }} className="truncate">
+                    <div style={{ fontWeight: 700, color: 'var(--color-text)', marginBottom: 2 }} className="truncate">
                       {quiz.title}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Clock size={11} /> {count} questions
+                        <Clock size={12} /> {count} questions
                       </span>
                       {quiz.topic && (
                         <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-subtle)' }}>· {quiz.topic}</span>
@@ -209,7 +300,7 @@ export default function StudentDashboard() {
                       className="btn btn-primary btn-sm"
                       id={`take-quiz-${quiz._id}`}
                       onClick={() => navigate(`/student/quiz/${quiz._id}`)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--color-primary)', color: '#fff' }}
                     >
                       Start Quiz <ArrowRight size={13} />
                     </button>
@@ -223,11 +314,19 @@ export default function StudentDashboard() {
 
       {/* ── Section: Recent Attempts ── */}
       <div className="card" style={{ padding: 0 }}>
-        <div className="section-header" style={{ padding: 'var(--sp-6)', borderBottom: '1px solid var(--color-border)', marginBottom: 0 }}>
-          <div className="section-title">Recent Attempt History</div>
-          <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-            Your submitted assessments and performance breakdown
+        <div className="section-header" style={{ padding: 'var(--sp-6)', borderBottom: '1px solid var(--color-border)', marginBottom: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div className="section-title">Recent Attempt History</div>
+            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+              Your submitted assessments and performance breakdown
+            </div>
           </div>
+          <Link
+            to="/student/attempts"
+            style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}
+          >
+            All History <ChevronRight size={14} />
+          </Link>
         </div>
 
         {loading ? (
@@ -260,11 +359,11 @@ export default function StudentDashboard() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-4)' }}>
                     <div style={{
-                      width: 40,
-                      height: 40,
+                      width: 42,
+                      height: 42,
                       borderRadius: 'var(--radius-md)',
-                      background: isPassed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                      color: isPassed ? '#34d399' : '#fbbf24',
+                      background: isPassed ? 'var(--color-success-subtle)' : 'var(--color-warning-subtle)',
+                      color: isPassed ? 'var(--color-success)' : 'var(--color-warning)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -274,7 +373,7 @@ export default function StudentDashboard() {
                       {attempt.percentage}%
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, color: 'var(--color-text)' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--color-text)' }}>
                         {attempt.quizTitle}
                       </div>
                       <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -286,7 +385,7 @@ export default function StudentDashboard() {
                   </div>
 
                   <button
-                    className="btn btn-ghost btn-sm"
+                    className="btn btn-secondary btn-sm"
                     onClick={() => navigate(`/student/result/${attempt._id}`)}
                     style={{ display: 'flex', alignItems: 'center', gap: 4 }}
                   >
@@ -298,6 +397,6 @@ export default function StudentDashboard() {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }

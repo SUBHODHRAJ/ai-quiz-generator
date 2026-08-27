@@ -12,10 +12,12 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import api from '../services/api';
 
 export default function Settings() {
   const { user, updateUser } = useAuth();
+  const toast = useToast();
 
   // Profile Form State
   const [name, setName] = useState(user?.name || '');
@@ -33,7 +35,7 @@ export default function Settings() {
 
   // Preferences State
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    return (localStorage.getItem('quizmind_theme') as 'dark' | 'light') || 'dark';
+    return (localStorage.getItem('quizmind_theme') as 'dark' | 'light') || 'light';
   });
   const [notifications, setNotifications] = useState<boolean>(() => {
     return localStorage.getItem('quizmind_notifications') !== 'false';
@@ -66,10 +68,11 @@ export default function Settings() {
       const res = await api.put('/auth/me', { name: name.trim() });
       updateUser({ name: res.data.data.user.name });
       setProfileSuccess('Profile updated successfully.');
+      toast.success('Workspace profile updated.');
     } catch (err: any) {
-      setProfileError(
-        err?.response?.data?.message || 'Failed to update profile. Please try again.'
-      );
+      const msg = err?.response?.data?.message || 'Failed to update profile. Please try again.';
+      setProfileError(msg);
+      toast.error(msg);
     } finally {
       setProfileLoading(false);
     }
@@ -102,13 +105,14 @@ export default function Settings() {
         newPassword
       });
       setPasswordSuccess('Password changed successfully.');
+      toast.success('Security password updated successfully.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
-      setPasswordError(
-        err?.response?.data?.message || 'Failed to change password. Please verify current password.'
-      );
+      const msg = err?.response?.data?.message || 'Failed to change password. Please verify current password.';
+      setPasswordError(msg);
+      toast.error(msg);
     } finally {
       setPasswordLoading(false);
     }
@@ -118,6 +122,7 @@ export default function Settings() {
     const next = !notifications;
     setNotifications(next);
     localStorage.setItem('quizmind_notifications', String(next));
+    toast.info(next ? 'Assessment notifications enabled.' : 'Notifications muted.');
   };
 
   return (
@@ -125,10 +130,9 @@ export default function Settings() {
       {/* Header */}
       <div className="page-header">
         <div className="page-eyebrow">
-          <Shield size={14} />
-          Account & Preferences
+          <Shield size={14} /> Account & Workspace Preferences
         </div>
-        <h1 className="page-title">Settings</h1>
+        <h1 className="page-title">Platform Settings</h1>
         <p className="page-subtitle">
           Manage your personal profile, security credentials, and workforce training preferences.
         </p>
@@ -142,7 +146,7 @@ export default function Settings() {
               width: 38,
               height: 38,
               borderRadius: 'var(--radius-md)',
-              background: 'rgba(99, 102, 241, 0.15)',
+              background: 'var(--color-primary-subtle)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -155,7 +159,7 @@ export default function Settings() {
                 Profile Information
               </h2>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: 0 }}>
-                Update your display name and view account details
+                Update your display name and view account privileges
               </p>
             </div>
           </div>
@@ -167,9 +171,9 @@ export default function Settings() {
               gap: 8,
               padding: '10px 14px',
               borderRadius: 'var(--radius-md)',
-              background: 'rgba(16, 185, 129, 0.12)',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              color: '#34d399',
+              background: 'var(--color-success-subtle)',
+              border: '1px solid rgba(21, 128, 61, 0.3)',
+              color: 'var(--color-success)',
               fontSize: 'var(--text-sm)',
               marginBottom: 'var(--sp-4)'
             }}>
@@ -185,9 +189,9 @@ export default function Settings() {
               gap: 8,
               padding: '10px 14px',
               borderRadius: 'var(--radius-md)',
-              background: 'rgba(239, 68, 68, 0.12)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
+              background: 'var(--color-danger-subtle)',
+              border: '1px solid rgba(185, 28, 28, 0.3)',
+              color: 'var(--color-danger)',
               fontSize: 'var(--text-sm)',
               marginBottom: 'var(--sp-4)'
             }}>
@@ -217,15 +221,15 @@ export default function Settings() {
                   className="form-input"
                   value={user?.email || ''}
                   disabled
-                  style={{ opacity: 0.7, cursor: 'not-allowed', background: 'var(--color-surface-mid)' }}
+                  style={{ opacity: 0.7, cursor: 'not-allowed', background: 'var(--color-surface-low)' }}
                 />
                 <span style={{ fontSize: '11px', color: 'var(--color-text-subtle)', marginTop: 4, display: 'block' }}>
-                  Email cannot be modified directly.
+                  Managed by organization administration.
                 </span>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Assigned Role</label>
+                <label className="form-label">Platform Role</label>
                 <div style={{
                   height: 42,
                   display: 'flex',
@@ -233,7 +237,7 @@ export default function Settings() {
                   gap: 8,
                   padding: '0 14px',
                   borderRadius: 'var(--radius-md)',
-                  background: 'var(--color-surface-mid)',
+                  background: 'var(--color-surface-low)',
                   border: '1px solid var(--color-border)',
                   color: 'var(--color-text)',
                   fontSize: 'var(--text-sm)',
@@ -242,12 +246,12 @@ export default function Settings() {
                   {user?.role === 'TEACHER' ? (
                     <>
                       <GraduationCap size={16} style={{ color: 'var(--color-primary)' }} />
-                      <span>Teacher / Training Manager</span>
+                      <span>Trainer / Training Manager</span>
                     </>
                   ) : (
                     <>
-                      <Briefcase size={16} style={{ color: 'var(--color-success)' }} />
-                      <span>Student / Trainee</span>
+                      <Briefcase size={16} style={{ color: 'var(--color-primary)' }} />
+                      <span>Learner / Trainee</span>
                     </>
                   )}
                 </div>
@@ -259,6 +263,7 @@ export default function Settings() {
                 type="submit"
                 className="btn btn-primary btn-md"
                 disabled={profileLoading || name === user?.name}
+                style={{ background: 'var(--color-primary)', color: '#fff' }}
               >
                 {profileLoading ? 'Saving...' : 'Save Profile Changes'}
               </button>
@@ -273,17 +278,17 @@ export default function Settings() {
               width: 38,
               height: 38,
               borderRadius: 'var(--radius-md)',
-              background: 'rgba(236, 72, 153, 0.15)',
+              background: 'var(--color-ai-subtle)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#ec4899'
+              color: 'var(--color-ai)'
             }}>
               <Lock size={20} />
             </div>
             <div>
               <h2 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>
-                Security & Password
+                Security & Credentials
               </h2>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: 0 }}>
                 Update your login password regularly for account security
@@ -298,9 +303,9 @@ export default function Settings() {
               gap: 8,
               padding: '10px 14px',
               borderRadius: 'var(--radius-md)',
-              background: 'rgba(16, 185, 129, 0.12)',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              color: '#34d399',
+              background: 'var(--color-success-subtle)',
+              border: '1px solid rgba(21, 128, 61, 0.3)',
+              color: 'var(--color-success)',
               fontSize: 'var(--text-sm)',
               marginBottom: 'var(--sp-4)'
             }}>
@@ -316,9 +321,9 @@ export default function Settings() {
               gap: 8,
               padding: '10px 14px',
               borderRadius: 'var(--radius-md)',
-              background: 'rgba(239, 68, 68, 0.12)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
+              background: 'var(--color-danger-subtle)',
+              border: '1px solid rgba(185, 28, 28, 0.3)',
+              color: 'var(--color-danger)',
               fontSize: 'var(--text-sm)',
               marginBottom: 'var(--sp-4)'
             }}>
@@ -371,6 +376,7 @@ export default function Settings() {
                 type="submit"
                 className="btn btn-primary btn-md"
                 disabled={passwordLoading || !currentPassword || !newPassword || !confirmPassword}
+                style={{ background: 'var(--color-primary)', color: '#fff' }}
               >
                 {passwordLoading ? 'Updating...' : 'Update Password'}
               </button>
@@ -385,20 +391,20 @@ export default function Settings() {
               width: 38,
               height: 38,
               borderRadius: 'var(--radius-md)',
-              background: 'rgba(59, 130, 246, 0.15)',
+              background: 'var(--color-primary-subtle)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#3b82f6'
+              color: 'var(--color-primary)'
             }}>
               <Moon size={20} />
             </div>
             <div>
               <h2 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>
-                Application Preferences
+                Visual & Notification Preferences
               </h2>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: 0 }}>
-                Customize visual theme and notifications
+                Customize visual theme and training notifications
               </p>
             </div>
           </div>
@@ -410,19 +416,27 @@ export default function Settings() {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: 'var(--sp-3) var(--sp-4)',
-              background: 'var(--color-surface-mid)',
+              background: 'var(--color-surface-low)',
               border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-md)',
             }}>
               <div>
-                <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--color-text)' }}>
-                  Interface Theme
+                <div style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--color-text)' }}>
+                  Visual Theme
                 </div>
                 <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                  Switch between Dark (Neural Navy) and Light mode
+                  Enterprise Warm Cream (Default) or Dark mode
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${theme === 'light' ? 'btn-primary' : 'btn-ghost'}`}
+                  onClick={() => setTheme('light')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Sun size={14} /> Warm Cream
+                </button>
                 <button
                   type="button"
                   className={`btn btn-sm ${theme === 'dark' ? 'btn-primary' : 'btn-ghost'}`}
@@ -430,14 +444,6 @@ export default function Settings() {
                   style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                 >
                   <Moon size={14} /> Dark
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn-sm ${theme === 'light' ? 'btn-primary' : 'btn-ghost'}`}
-                  onClick={() => setTheme('light')}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                  <Sun size={14} /> Light
                 </button>
               </div>
             </div>
@@ -448,24 +454,24 @@ export default function Settings() {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: 'var(--sp-3) var(--sp-4)',
-              background: 'var(--color-surface-mid)',
+              background: 'var(--color-surface-low)',
               border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-md)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Bell size={16} style={{ color: 'var(--color-text-muted)' }} />
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--color-text)' }}>
+                  <div style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--color-text)' }}>
                     Assessment Notifications
                   </div>
                   <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                    Receive alerts when new quizzes are published
+                    Receive real-time alerts when new quizzes are published
                   </div>
                 </div>
               </div>
               <button
                 type="button"
-                className={`btn btn-sm ${notifications ? 'btn-primary' : 'btn-ghost'}`}
+                className={`btn btn-sm ${notifications ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={toggleNotifications}
               >
                 {notifications ? 'Enabled' : 'Disabled'}

@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Brain,
   Mail,
   Lock,
   Eye,
@@ -10,8 +9,11 @@ import {
   GraduationCap,
   BookOpen,
   CheckCircle2,
+  ShieldCheck,
+  Building2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import type { UserRole } from '../types';
 import { AlertBox } from '../components/ui/ConfirmDialog';
 
@@ -23,6 +25,7 @@ const passwordRules = [
 export default function Register() {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const toast = useToast();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -38,10 +41,13 @@ export default function Register() {
     setSubmitting(true);
     try {
       await register({ name, email, password, role });
+      toast.success('Account created successfully.');
       navigate('/dashboard');
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
-      setError(axiosErr?.response?.data?.message || 'Unable to create account. Please try again.');
+      const msg = axiosErr?.response?.data?.message || 'Unable to create account. Please try again.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -50,55 +56,57 @@ export default function Register() {
   return (
     <div className="auth-root">
       {/* ── Left Branding Panel ── */}
-      <div className="auth-left">
+      <div className="auth-left" style={{
+        background: 'linear-gradient(145deg, #24100C 0%, #351C15 50%, #1A0B08 100%)',
+        color: '#FFF8ED'
+      }}>
         <div className="auth-left-bg">
-          <div className="auth-left-glow" />
-          <div className="auth-left-glow-2" />
+          <div className="auth-left-glow" style={{ background: 'radial-gradient(circle, rgba(255,181,0,0.15) 0%, transparent 70%)' }} />
+          <div className="auth-left-glow-2" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%)' }} />
         </div>
 
-        <svg className="auth-neural-grid" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-          {Array.from({ length: 8 }).map((_, i) =>
-            Array.from({ length: 6 }).map((_, j) => (
-              <circle key={`${i}-${j}`} cx={i * 60} cy={j * 60} r="2" fill="white" />
-            ))
-          ).flat()}
-          {Array.from({ length: 7 }).map((_, i) =>
-            Array.from({ length: 5 }).map((_, j) => (
-              <line key={`h-${i}-${j}`} x1={i * 60} y1={j * 60} x2={(i + 1) * 60} y2={j * 60} stroke="white" strokeWidth="0.5" />
-            ))
-          ).flat()}
-        </svg>
-
         <div className="auth-brand">
-          <div className="auth-brand-icon">
-            <Brain size={22} />
-          </div>
+          <img
+            src="/ups-logo-0.webp"
+            alt="UPS Logo"
+            style={{
+              width: 44,
+              height: 44,
+              objectFit: 'contain',
+              flexShrink: 0
+            }}
+          />
           <div>
-            <div className="auth-brand-name">QuizMind</div>
-            <div className="auth-tagline">AI-powered learning</div>
+            <div className="auth-brand-name" style={{ color: '#FFF8ED' }}>QuizMind</div>
+            <div className="auth-tagline" style={{ color: 'rgba(255,248,237,0.7)' }}>Intelligent assessments. Better learning.</div>
           </div>
         </div>
 
         <div className="auth-left-hero">
-          <h1 className="auth-hero-heading">
-            Start building a smarter learning habit
+          <div className="enterprise-badge" style={{ alignSelf: 'flex-start', marginBottom: 'var(--sp-4)', background: 'rgba(255, 181, 0, 0.15)', color: 'var(--color-gold)', borderColor: 'rgba(255,181,0,0.3)' }}>
+            <Building2 size={12} /> Enterprise Assessment Infrastructure
+          </div>
+
+          <h1 className="auth-hero-heading" style={{ color: '#FFF8ED' }}>
+            Build intelligent workforce assessments with AI.
           </h1>
-          <p className="auth-hero-subtext">
-            Join thousands of educators and students using AI to create and take
-            intelligent quizzes. Set up your account in under 60 seconds.
+          <p className="auth-hero-subtext" style={{ color: 'rgba(255,248,237,0.8)' }}>
+            Empower educators and training directors to evaluate competence, measure learning progress, and verify procedural understanding.
           </p>
 
           <div className="auth-features">
             {[
-              { icon: <GraduationCap size={18} />, title: 'For Teachers',  desc: 'Create AI-powered quizzes from your documents' },
-              { icon: <BookOpen size={18} />,       title: 'For Students',  desc: 'Take quizzes and get instant explanations' },
-              { icon: <CheckCircle2 size={18} />,   title: 'Free to start', desc: 'No credit card required' },
+              { icon: <GraduationCap size={18} />, title: 'For Trainers & Educators', desc: 'Create AI-assisted assessments from your documentation' },
+              { icon: <BookOpen size={18} />, title: 'For Learners & Trainees', desc: 'Interactive testing with immediate conceptual feedback' },
+              { icon: <ShieldCheck size={18} />, title: 'Built for Enterprise Reliability', desc: 'Strict data isolation and verifiable grading standards' },
             ].map((f, i) => (
               <div className="auth-feature-item" key={i}>
-                <div className="auth-feature-icon">{f.icon}</div>
+                <div className="auth-feature-icon" style={{ background: 'rgba(255,181,0,0.12)', borderColor: 'rgba(255,181,0,0.3)', color: 'var(--color-gold)' }}>
+                  {f.icon}
+                </div>
                 <div className="auth-feature-text">
-                  <strong>{f.title}</strong>
-                  <span>{f.desc}</span>
+                  <strong style={{ color: '#FFF8ED' }}>{f.title}</strong>
+                  <span style={{ color: 'rgba(255,248,237,0.7)' }}>{f.desc}</span>
                 </div>
               </div>
             ))}
@@ -109,22 +117,22 @@ export default function Register() {
       {/* ── Right Form Panel ── */}
       <div className="auth-right">
         <div className="auth-card">
-          <h2 className="auth-card-heading">Create your account</h2>
-          <p className="auth-card-subtext">Get started for free — no credit card required.</p>
+          <h2 className="auth-card-heading">Create Account</h2>
+          <p className="auth-card-subtext">Set up your QuizMind workspace profile.</p>
 
           <AlertBox type="error" message={error} />
 
           <form onSubmit={handleSubmit}>
             {/* Full Name */}
             <div className="form-group">
-              <label className="form-label" htmlFor="name">Full name</label>
+              <label className="form-label" htmlFor="name">Full Name</label>
               <div className="input-wrapper">
                 <span className="input-icon-left"><UserRound size={16} /></span>
                 <input
                   id="name"
                   type="text"
                   className="form-input has-icon-left"
-                  placeholder="Your full name"
+                  placeholder="e.g. Marcus Vance"
                   value={name}
                   onChange={e => setName(e.target.value)}
                   required
@@ -135,14 +143,14 @@ export default function Register() {
 
             {/* Email */}
             <div className="form-group">
-              <label className="form-label" htmlFor="reg-email">Email</label>
+              <label className="form-label" htmlFor="reg-email">Work / Personal Email</label>
               <div className="input-wrapper">
                 <span className="input-icon-left"><Mail size={16} /></span>
                 <input
                   id="reg-email"
                   type="email"
                   className="form-input has-icon-left"
-                  placeholder="you@example.com"
+                  placeholder="you@company.com"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
@@ -177,13 +185,14 @@ export default function Register() {
                 </button>
               </div>
               {password && (
-                <div className="password-hint" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div className="password-hint" style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
                   {passwordRules.map(rule => (
                     <span
                       key={rule.label}
                       style={{
                         color: rule.test(password) ? 'var(--color-success)' : 'var(--color-text-muted)',
                         display: 'flex', alignItems: 'center', gap: 6,
+                        fontSize: 'var(--text-xs)'
                       }}
                     >
                       <CheckCircle2 size={12} />
@@ -196,7 +205,7 @@ export default function Register() {
 
             {/* Account type */}
             <div className="form-group">
-              <label className="form-label">Account type</label>
+              <label className="form-label">Platform Role</label>
               <div className="role-cards">
                 <button
                   type="button"
@@ -205,8 +214,8 @@ export default function Register() {
                   onClick={() => setRole('STUDENT')}
                 >
                   <div className="role-card-icon"><BookOpen size={20} /></div>
-                  <div className="role-card-title">Student</div>
-                  <div className="role-card-desc">Take quizzes and learn</div>
+                  <div className="role-card-title">Learner / Student</div>
+                  <div className="role-card-desc">Take tests & track progress</div>
                 </button>
 
                 <button
@@ -216,8 +225,8 @@ export default function Register() {
                   onClick={() => setRole('TEACHER')}
                 >
                   <div className="role-card-icon"><GraduationCap size={20} /></div>
-                  <div className="role-card-title">Teacher</div>
-                  <div className="role-card-desc">Create and manage quizzes</div>
+                  <div className="role-card-title">Trainer / Teacher</div>
+                  <div className="role-card-desc">Create & publish assessments</div>
                 </button>
               </div>
             </div>
@@ -232,10 +241,10 @@ export default function Register() {
               {submitting ? (
                 <>
                   <span className="spinner spinner-sm" />
-                  Creating account...
+                  Setting up account...
                 </>
               ) : (
-                'Create account'
+                'Create Account & Enter'
               )}
             </button>
           </form>
@@ -247,7 +256,7 @@ export default function Register() {
             color: 'var(--color-text-muted)',
           }}>
             Already have an account?{' '}
-            <Link to="/login">Sign in</Link>
+            <Link to="/login" style={{ fontWeight: 600, color: 'var(--color-primary)' }}>Sign in</Link>
           </p>
         </div>
       </div>

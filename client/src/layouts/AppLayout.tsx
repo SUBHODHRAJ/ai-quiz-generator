@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
-  Brain,
   LayoutDashboard,
   PlusCircle,
   BookOpen,
@@ -11,6 +10,10 @@ import {
   Menu,
   X,
   GraduationCap,
+  BarChart3,
+  Award,
+  ShieldCheck,
+  Trophy
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -24,11 +27,15 @@ const teacherNav: NavItemDef[] = [
   { to: '/teacher/dashboard', label: 'Dashboard',   icon: <LayoutDashboard size={18} /> },
   { to: '/teacher/upload',    label: 'Create Quiz',  icon: <PlusCircle size={18} /> },
   { to: '/teacher/quizzes',   label: 'My Quizzes',   icon: <BookOpen size={18} /> },
+  { to: '/teacher/analytics', label: 'Analytics',    icon: <BarChart3 size={18} /> },
+  { to: '/leaderboard',       label: 'Leaderboard',  icon: <Trophy size={18} /> },
 ];
 
 const studentNav: NavItemDef[] = [
-  { to: '/student/dashboard', label: 'Dashboard',  icon: <LayoutDashboard size={18} /> },
-  { to: '/student/quizzes',   label: 'Quizzes',    icon: <BookMarked size={18} /> },
+  { to: '/student/dashboard', label: 'Dashboard',          icon: <LayoutDashboard size={18} /> },
+  { to: '/student/quizzes',   label: 'Available Quizzes',  icon: <BookMarked size={18} /> },
+  { to: '/student/attempts',  label: 'My Attempts',        icon: <Award size={18} /> },
+  { to: '/leaderboard',       label: 'Leaderboard',        icon: <Trophy size={18} /> },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -55,7 +62,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = user?.role === 'TEACHER' ? teacherNav : studentNav;
   const initials = user?.name
     ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
-    : '?';
+    : 'QM';
 
   const handleLogout = () => {
     logout();
@@ -65,19 +72,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const SidebarContent = () => (
     <>
       {/* Logo */}
-      <div className="sidebar-logo">
-        <div className="sidebar-logo-icon">
-          <Brain size={20} />
-        </div>
+      <div className="sidebar-logo" style={{ background: 'var(--color-primary)', color: '#fff', borderBottom: '1px solid rgba(255, 248, 237, 0.12)' }}>
+        <img
+          src="/ups-logo-0.webp"
+          alt="UPS Logo"
+          style={{
+            width: 36,
+            height: 36,
+            objectFit: 'contain',
+            flexShrink: 0
+          }}
+        />
         <div>
-          <div className="sidebar-logo-text">QuizMind</div>
-          <div className="sidebar-logo-tagline">AI-powered learning</div>
+          <div style={{ fontSize: 'var(--text-lg)', fontWeight: 800, letterSpacing: '-0.02em', color: '#fff' }}>
+            QuizMind
+          </div>
+          <div style={{ fontSize: 11, color: 'rgba(255, 248, 237, 0.75)', fontWeight: 500 }}>
+            Intelligent assessments
+          </div>
         </div>
       </div>
 
       {/* Nav */}
       <nav className="sidebar-nav">
-        <div className="sidebar-section-label">Navigation</div>
+        <div className="sidebar-section-label">Enterprise Platform</div>
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -104,15 +122,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Footer */}
       <div className="sidebar-footer">
         <div className="sidebar-user">
-          <div className="sidebar-user-avatar">{initials}</div>
+          <div className="sidebar-user-avatar" style={{ background: 'var(--color-primary)', color: 'var(--color-gold)', border: '1px solid var(--color-border-strong)' }}>
+            {initials}
+          </div>
           <div className="sidebar-user-info">
             <div className="sidebar-user-name">{user?.name || 'User'}</div>
             <div className="sidebar-user-role">
               {user?.role === 'TEACHER' ? (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <GraduationCap size={11} /> Teacher
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-primary)', fontWeight: 600 }}>
+                  <GraduationCap size={12} /> Teacher
                 </span>
-              ) : 'Student'}
+              ) : (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                  <ShieldCheck size={12} /> Student
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -157,14 +181,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-text)' }}>
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--color-text)' }}>
                 {user?.name || 'User'}
               </span>
               <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
                 {user?.email}
               </span>
             </div>
-            <div className="sidebar-user-avatar">{initials}</div>
+            <div className="sidebar-user-avatar" style={{ background: 'var(--color-primary)', color: 'var(--color-gold)' }}>
+              {initials}
+            </div>
           </div>
         </header>
 

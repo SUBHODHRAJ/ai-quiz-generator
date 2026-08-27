@@ -6,6 +6,7 @@ import fs from "fs";
 import {
   generateQuizFromDocument,
   getTeacherQuizzes,
+  getTeacherAnalytics,
   getPublishedQuizzes,
   getTeacherStats,
   getQuizById,
@@ -13,7 +14,9 @@ import {
   updateQuizStatus,
   publishQuiz,
   unpublishQuiz,
-  deleteQuiz
+  deleteQuiz,
+  regenerateQuestion,
+  enhanceExplanation
 } from "../controllers/quiz.controller";
 import { submitQuizAttempt } from "../controllers/attemptController";
 import { authenticate } from "../middleware/auth";
@@ -91,6 +94,30 @@ router.get(
   "/stats",
   authenticate,
   getTeacherStats
+);
+
+/*
+ * Get comprehensive teacher analytics
+ */
+router.get(
+  "/analytics",
+  authenticate,
+  getTeacherAnalytics
+);
+
+/*
+ * AI Question Actions
+ */
+router.post(
+  "/regenerate-question",
+  authenticate,
+  regenerateQuestion
+);
+
+router.post(
+  "/enhance-explanation",
+  authenticate,
+  enhanceExplanation
 );
 
 /*
