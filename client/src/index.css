@@ -1680,24 +1680,27 @@ details>summary::-webkit-details-marker {
 .confirm-dialog-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(10, 5, 3, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 9999;
   padding: var(--sp-4);
-  animation: fadeIn 0.15s ease;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .confirm-dialog {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-xl);
-  padding: var(--sp-8);
-  max-width: 400px;
+  background: #231612;
+  border: 1px solid rgba(255, 181, 0, 0.28);
+  border-radius: var(--radius-2xl, 18px);
+  padding: var(--sp-6) var(--sp-6) var(--sp-5);
+  max-width: 520px;
   width: 100%;
-  box-shadow: var(--shadow-xl);
-  animation: scaleIn 0.15s ease;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 181, 0, 0.12);
+  animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
 }
 
 @keyframes fadeIn {
