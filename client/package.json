@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "start": "npx serve -s dist -l $PORT",
+    "start": "node serve.js",
     "preview": "vite preview"
   },
   "dependencies": {
