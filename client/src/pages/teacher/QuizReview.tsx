@@ -158,8 +158,10 @@ export default function QuizReview() {
     setPublishing(true);
     setError('');
     try {
-      await api.put(`/quizzes/${quiz._id}`, quiz);
-      await api.patch(`/quizzes/${quiz._id}/publish`);
+      const res = await api.patch(`/quizzes/${quiz._id}/publish`, quiz);
+      if (res.data?.data) {
+        setQuiz(res.data.data);
+      }
       toast.success('Assessment published! Available to learners immediately.');
       navigate('/teacher/quizzes');
     } catch (err: any) {

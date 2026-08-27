@@ -825,12 +825,30 @@ export async function publishQuiz(
       return;
     }
 
+    const body = req.body || {};
+    const updateData: any = { status: "published" };
+
+    if (body.title !== undefined) updateData.title = body.title;
+    if (body.description !== undefined) updateData.description = body.description;
+    if (body.topic !== undefined) updateData.topic = body.topic;
+    if (body.questions && Array.isArray(body.questions)) {
+      updateData.questions = body.questions.map((q: any) => ({
+        question: q.question,
+        type: ["mcq", "true_false", "short_answer"].includes(q.type) ? q.type : "mcq",
+        options: q.type === "true_false" ? ["True", "False"] : q.type === "short_answer" ? undefined : q.options,
+        answer: q.answer,
+        explanation: q.explanation || "",
+        difficulty: ["easy", "medium", "hard"].includes(q.difficulty) ? q.difficulty : "medium",
+        source: q.source || "Source: Uploaded training material"
+      }));
+    }
+
     const quiz = await Quiz.findOneAndUpdate(
       {
         _id: id,
         createdBy: req.user.userId
       },
-      { status: "published" },
+      { $set: updateData },
       { new: true }
     );
 
