@@ -10,21 +10,15 @@ const HOST = "0.0.0.0";
 
 const startServer = async (): Promise<void> => {
   try {
-    await connectDatabase();
-
-    app.get("/health", (_req, res) => {
-      res.status(200).json({
-        success: true,
-        message: "QuizMind API is running",
-      });
-    });
-
+    // Start HTTP server immediately so Railway health checks pass instantly
     app.listen(PORT, HOST, () => {
-      console.log(`Server running on ${HOST}:${PORT}`);
+      console.log(`QuizMind API server running on ${HOST}:${PORT}`);
     });
+
+    // Connect to MongoDB Atlas
+    await connectDatabase();
   } catch (error) {
-    console.error("Server startup failed:", error);
-    process.exit(1);
+    console.error("Server startup error:", error);
   }
 };
 
